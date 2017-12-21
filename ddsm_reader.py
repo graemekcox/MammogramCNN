@@ -6,9 +6,63 @@ import matplotlib.pyplot as plt
 ## Uses a LJPEG to JPEG converter found at the following link:
 #.      https://github.com/nicholaslocascio/ljpeg-ddsm
 
-class mammogram(object):
-	def __init__(self,patients):
-		self.patients = patients
+def readPatients():
+	root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/'
+	patients = []
+	folders = os.listdir(root)
+	folders.remove('.DS_Store')
+
+	for folder in folders:
+		temp = root+folder
+		subfolders = os.listdir(temp)
+		if '.DS_Store' in subfolders:
+			subfolders.remove('.DS_Store')
+
+		for subfolder in subfolders:
+			tempSubfolder = temp+'/'+subfolder
+			cases = os.listdir(tempSubfolder)
+			if '.DS_Store' in cases:
+				cases.remove('.DS_Store')
+
+			for case in cases:
+				
+				#get all files in folder
+				case = tempSubfolder+'/'+case + '/'
+				files = os.listdir(case)
+				#convert from ljpeg to jpeg
+				# if ".jpg" in files:
+				if '.jpg' not in '\t'.join(files):
+					print('Convert files from LJPEG to jpg')
+					convertLJPEG(case)
+				#Find files with the .ics extension
+				matching = [s for s in files if '.ics' in s]
+				# print(fn_ics)
+				patients.append(readICS(folder,case,matching[0].strip('.ics')))
+
+	np.save('patient_data.npy', patients)
+	return patients
+				
+	# patients= np.load('patient_data.npy')
+
+
+	# # typeim = 'Normal/'
+	# print(len(patients))
+	# print(patients[10].pathology)
+
+
+
+class Mammogram(object):
+	def __init__(self):
+		self._patients = readPatients()
+		self._classes = ['Benign','Cancer','Normal']
+	
+	@property
+	def patients(self):
+		return self._patients
+
+	@property
+	def classes(self):
+		return self._classes
 
 class Patient(object):
 	def __init__(self,l_cc,l_mlo,r_cc, r_mlo,fn,density,age, pathlogy):
@@ -191,52 +245,6 @@ def readICS(rootfolder,subfolder,fn):
 
 
 
-root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/'
-
-patients = []
-
-folders = os.listdir(root)
-folders.remove('.DS_Store')
-
-for folder in folders:
-	temp = root+folder
-	subfolders = os.listdir(temp)
-	if '.DS_Store' in subfolders:
-		subfolders.remove('.DS_Store')
-
-	for subfolder in subfolders:
-		tempSubfolder = temp+'/'+subfolder
-		cases = os.listdir(tempSubfolder)
-		if '.DS_Store' in cases:
-			cases.remove('.DS_Store')
-
-		for case in cases:
-			
-			#get all files in folder
-			case = tempSubfolder+'/'+case + '/'
-			files = os.listdir(case)
-			#convert from ljpeg to jpeg
-
-			# if ".jpg" in files:
-			if '.jpg' not in '\t'.join(files):
-				print('Convert files from LJPEG to jpg')
-				convertLJPEG(case)
-
-
-			#Find files with the .ics extension
-			matching = [s for s in files if '.ics' in s]
-			# print(fn_ics)
-			patients.append(readICS(folder,case,matching[0].strip('.ics')))
-
-np.save('patient_data.npy', patients)
-
-			
-patients= np.load('patient_data.npy')
-
-
-# typeim = 'Normal/'
-print(len(patients))
-print(patients[10].pathology)
 
 # # root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/Normal/normal_01/'
 # case = 'case0003/'
