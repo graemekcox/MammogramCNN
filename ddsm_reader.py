@@ -75,6 +75,7 @@ class Patient(object):
 		self._density = density #Breast tissue density ACR
 		self._age=  age
 		self._pathology = pathlogy
+		self._classes = ['Benign','Cancer','Normal']
 
 	@property
 	def name(self):
@@ -107,6 +108,10 @@ class Patient(object):
 	@property
 	def pathology(self):
 		return self._pathology
+
+	# def createLabel(self):
+	# 	label = np.zeros(len(self._classes))
+
 
 class Scan(object):
 	def __init__(self,title,xres,yres,BITS_PER_PIXEL,res,data, overlay):
