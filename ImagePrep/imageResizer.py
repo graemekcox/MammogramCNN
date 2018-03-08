@@ -25,9 +25,7 @@ def padArray(data,max_x, max_y):
 
 	new_im[x1:x2, y1:y2] = data
 
-	cv2.imshow('new image', new_im)
-	cv2.waitKey(0)
-	cv2.destoryAllWindows()
+
 
 
 
@@ -44,10 +42,10 @@ def convertToBW(data):
 	
 
 
-fn = '/Users/graemecox/Documents/My Pictures/FullSizeRender.jpg'
+# fn = '/Users/graemecox/Documents/My Pictures/FullSizeRender.jpg'
 
-image = Image.open(fn)
-image = np.array(image)
+# image = Image.open(fn)
+# image = np.array(image)
 
-padArray(image, 1000,1000)
+# padArray(image, 1000,1000)
 
