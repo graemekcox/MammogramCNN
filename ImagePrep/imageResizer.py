@@ -41,6 +41,35 @@ def convertToBW(data):
 	# cv2.destoryAllWindows()
 	
 
+# labels= ['Cancer', 'Benign', 'Normal']
+
+# # main_labels = np.empty((0,3),dtype='int')
+# main_labels = []
+
+# root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/Normal/normal_02/case0203/A_0203_1.LEFT_CC.jpg'
+
+# print(len(labels))
+
+# for i in range(len(labels)):
+# 	# temp_labels = np.zeros((3,),dtype='int')
+# 	temp_labels = [0,0,0]
+# 	if labels[i] in root:
+# 		temp_labels[i] = 1
+
+
+# print(temp_labels)
+
+# main_labels.append(temp_labels)
+# main_labels.append(temp_labels)
+# main_labels.append(temp_labels)
+# main_labels = np.array(main_labels)
+# print(main_labels.shape)
+
+
+
+
+# print(np.append(main_labels, temp_labels))
+# print(main_labels)
 
 # fn = '/Users/graemecox/Documents/My Pictures/FullSizeRender.jpg'
 
