@@ -56,6 +56,16 @@ def prepImages(root, max_x=100, max_y=100,save=0):
 	labels = np.array(labels)
 
 	if save:
+		i_shuf = np.random.permutation(np.arange(len()))
+
+		shuf_len = len(i_shuf)
+
+		i_1 = i_shuf[0:full_len/3]
+		i_2 = i_shuf[full_len/3 : 2*full_len/3]
+		i_3 = i_shuf[2*full_len/3 : 3*full_len/3]
+
+		batch_1 = train_images
+
 		np.save('/Users/graemecox/Documents/ResearchProject/Code/Data/image.npy',train_images)
 		np.save('/Users/graemecox/Documents/ResearchProject/Code/Data/labels.npy',labels)
 
@@ -79,6 +89,38 @@ def findBiggestImage(root):
 					max_y = image.shape[0]
 
 	return max_x, max_y
+
+
+# def saveInBatch(array):
+feat = np.array([[1,2,3],
+	[4,5,6],
+	[7,8,9],
+	[1,4,5],
+	[2,4,7],
+	[9,8,5]])
+
+labels = np.array([
+	'Cancer',
+	'Benign',
+	'Normal',
+	'Benign',
+	'Normal',
+	'Cancer'])
+
+
+i_shuf = np.random.permutation(np.arange(len(feat)))
+print(i_shuf)
+
+
+
+# batch_1 = feat[i_shuf[0:full_len/3-1]]
+# print(batch_1)
+# batch_2 = feat[i_shuf[full_len/3 : 2*full_len/3]]
+# print(batch_2)
+# print_3 = feat[i_shuf[2*full_len/3 : 3*full_len/3]]
+
+# print(arr)
+
 
 
 # fn = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/Benign/benign_01/case0029/C_0029_1.LEFT_CC.jpg'
