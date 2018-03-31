@@ -3,7 +3,7 @@ from PIL import Image
 import os
 import sys
 
-sys.path.insert(0, '/Users/graemecox/Documents/ResearchProject/Code/imagePrep')
+sys.path.insert(0, 'imagePrep')
 from imageResizer import * 
 
 ## Reads in all images in root, add saves labels
@@ -14,6 +14,8 @@ def prepImages(root, max_x=100, max_y=100,save=0):
 	train_images = []
 	images = []
 	labels = []
+
+
 	
 	classes = ['Cancer','Benign','Normal']
 	# root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/'
@@ -56,18 +58,18 @@ def prepImages(root, max_x=100, max_y=100,save=0):
 	labels = np.array(labels)
 
 	if save:
-		i_shuf = np.random.permutation(np.arange(len()))
+		# i_shuf = np.random.permutation(np.arange(len(train_images)))
+		print('----- Saved images and labels ------')
+		np.save('Data/image.npy',train_images)
+		np.save('Data/labels.npy',labels)
+		subfolder = 'Data/'+str(max_x)+'_'+str(max_y)+'/'
 
-		shuf_len = len(i_shuf)
+		if not os.path.exists(subfolder): # If folder doesn't exist, create it
+			os.makedirs(subfolder)
 
-		i_1 = i_shuf[0:full_len/3]
-		i_2 = i_shuf[full_len/3 : 2*full_len/3]
-		i_3 = i_shuf[2*full_len/3 : 3*full_len/3]
+		saveInBatch(train_images, labels,subfolder)
 
-		batch_1 = train_images
-
-		np.save('/Users/graemecox/Documents/ResearchProject/Code/Data/image.npy',train_images)
-		np.save('/Users/graemecox/Documents/ResearchProject/Code/Data/labels.npy',labels)
+		print('----- Finished writing files -----')
 
 	return train_images, labels
 
@@ -91,27 +93,22 @@ def findBiggestImage(root):
 	return max_x, max_y
 
 
-# def saveInBatch(array):
-feat = np.array([[1,2,3],
-	[4,5,6],
-	[7,8,9],
-	[1,4,5],
-	[2,4,7],
-	[9,8,5]])
+def saveInBatch(features, labels, subfolder):
+	i_shuf = np.random.permutation(np.arange(len(features)))
 
-labels = np.array([
-	'Cancer',
-	'Benign',
-	'Normal',
-	'Benign',
-	'Normal',
-	'Cancer'])
+	full_len = len(i_shuf)
 
+	numBatch = 4
 
-i_shuf = np.random.permutation(np.arange(len(feat)))
-print(i_shuf)
+	print('----- Started writing batch files -----')
+	for i in range(numBatch):
+		# i1 = (i-1)*full_len/numBatch 
+		# i2 = i*full_len/numBatch -1
+		# ind = [i1:i2]
+		ind = i_shuf[ (i-1)*full_len/numBatch : i*full_len/numBatch -1]
 
-
+		np.save(subfolder+'image_b'+str(i)+'.npy', features[ind])
+		np.save(subfolder+'labels_b'+str(i)+'.npy', labels[ind])
 
 # batch_1 = feat[i_shuf[0:full_len/3-1]]
 # print(batch_1)
@@ -121,21 +118,17 @@ print(i_shuf)
 
 # print(arr)
 
-
-
 # fn = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/Benign/benign_01/case0029/C_0029_1.LEFT_CC.jpg'
-# root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/'
+root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/'
 # root = '/Volumes/SeagateBackupPlusDrive/Mammograms/'
 
-# # max_x, max_y = findBiggestImage(root)
-# # print(max_x, max_y)
 
-# images, labels = prepImages(root, 256,256,1)
+# max_x, max_y = findBiggestImage(root)
+# print(findBiggestImage(root))
+
+# max_x = 500
+# max_y = 500
+
+# images, labels = prepImages(root, max_x,max_y,1)
 # print(images.shape)
 # print(labels.shape)
-# root =  '//Volumes/SeagateBackupPlusDrive/Mammograms'
-# root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms'
-
-# images,labels  = prepImages(root)
-
-# print(len(images))
