@@ -1,133 +1,155 @@
 import tensorflow as tf
-# from tensorflow.examples.tutorials.mnist import input_data
-from dataset import *
-import cv2
-import matplotlib.pyplot as plt
-
-def run_cnn():
-	# mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-	
-	learning_rate = 0.0001
-	epochs = 1
-	batch_size = 50
-
-	#Initial parameters
-	img_x = 32
-	img_y = 32
-	class_size = 10
-
-	# x = tf.placeholder(tf.float32,[None, img_x*img_y*3])
-	x = tf.placeholder(tf.float32,[None, img_x*img_y])
-	x_shaped = tf.reshape(x,[-1, img_x, img_y, 1])
-	# x_shaped = tf.reshape(x,[-1,img_x,img_y,3,1])
-	#10 digits
-	y = tf.placeholder(tf.float32,[None, 10])
-	#Create convolution layers
-	layer1 = create_conv_layer(x_shaped,1,32,[5,5],[2,2],name='layer1')
-	layer2 = create_conv_layer(layer1,32,64,[5,5],[2,2],name='layer2')
+import sys
 
 
-	flattened = tf.reshape(layer2, [-1,img_x/4*img_y/4*64])
-	wd1 = tf.Variable(tf.truncated_normal([img_x/4*img_y/4*64,1000], stddev=0.03),name='wd1')
-	bd1 = tf.Variable(tf.truncated_normal([1000],stddev=0.01),name='bd1')
+sys.path.insert(0, 'Classifier/')
+sys.path.insert(0, 'imagePrep/')
+
+from classifier import *
+from imagePrep import *
+
+from tensorflow.examples.tutorials.mnist import input_data
+from sklearn.model_selection import train_test_split
+import numpy as np
+from PIL import Image
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Ignore CPU instructions warning since we're using GPU
+
+##Parameters to set before running
+USE_EX_DATA = True
+# root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms'
+# root =  '//Volumes/SeagateBackupPlusDrive/Mammograms'
+root = '/Volumes/ExternalDrive/Mammograms/'
+
+if (USE_EX_DATA):
+	IMAGE_SIZE=28
+	NUM_CLASSES = 10
+	mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+	print('Using MNIST dataset')
+else:
+	IMAGE_SIZE = 500
+	NUM_CLASSES=3
+	print('Reading from DDSM dataset')
+
+
+#Learning variables
+LR = 0.0001
+epochs = 10
+batch_size = 50
+
+
+def next_batch(num, data, labels):
+	idx = np.arange(0, len(data))
+	np.random.shuffle(idx)
+	idx = idx[:num]
+	data_shuffle = [data[i] for i in idx]
+	labels_shuffle = [labels[i] for i in idx]
+	return np.asarray(data_shuffle), np.asarray(labels_shuffle)
+
+def main():
+	x = tf.placeholder(tf.float32,[None,IMAGE_SIZE*IMAGE_SIZE])
+	x_shaped = tf.reshape(x,[-1,IMAGE_SIZE,IMAGE_SIZE,1]) #convd2d and max_pool take in 4D arrays, so we reshape our data
+	# in shape [i,j,k,l]
+	# i=number of training samples, j=height of image, k=weight, l=channel number
+	#-1 will dynamically reshape based on number of training samples
+
+	y = tf.placeholder(tf.float32,[None,NUM_CLASSES])
+
+	layer1 = create_new_conv_layer(x_shaped,1,32,[5,5],[2,2],name='layer1')
+	layer2 = create_new_conv_layer(layer1,32,64,[5,5],[2,2],name='layer2')
+
+	new_size = IMAGE_SIZE/4
+
+	flattened = tf.reshape(layer2, [-1,new_size*new_size*64])
+
+	wd1 = tf.Variable(tf.truncated_normal([new_size*new_size*64,1000], stddev=0.03),name='wd1')
+	bd1 = tf.Variable(tf.truncated_normal([1000], stddev=0.01), name='bd1')
 	dense_layer1 = tf.matmul(flattened,wd1) + bd1
-	dense_layer1 = tf.nn.relu(dense_layer1)
+	dense_layer1=  tf.nn.relu(dense_layer1)
 
-	wd2 = tf.Variable(tf.truncated_normal([1000,class_size], stddev=0.03),name='wd2')
-	bd2 = tf.Variable(tf.truncated_normal([class_size],stddev=0.01),name='bd2')
+	#more softmax activation
+
+	wd2 = tf.Variable(tf.truncated_normal([1000, NUM_CLASSES], stddev=0.03),name='wd2')
+	bd2 = tf.Variable(tf.truncated_normal([NUM_CLASSES], stddev=0.01), name='bd2')
 	dense_layer2 = tf.matmul(dense_layer1,wd2) + bd2
+
 	y_ = tf.nn.softmax(dense_layer2)
 
-	#
-	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=dense_layer2,labels=y))
+	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=dense_layer2, labels=y))
 
-	optimiser = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cross_entropy)
+	### Stats stuff
 
-	#define an accuracy assessment operation
-	correct_prediction = tf.equal(tf.argmax(y,1),tf.argmax(y_,1))
+	optimiser = tf.train.AdamOptimizer(learning_rate=LR).minimize(cross_entropy)
+
+	#define accuracy aseeseement operation
+	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
 
-	#setup initialization operator
+	#setup initialisation operator
 	init_op = tf.global_variables_initializer()
 
-	tf.summary.scalar('accuracy',accuracy)
-	merged = tf.summary.merge_all()
-	# writer =tf.summary.FileWriter('\\Users\\graemecox\\Documents\\DeepLearning\\CNN\\TensorFlowSample\\SimpleMNIST')
-	writer =tf.summary.FileWriter('outputFiles')
 
+################################## GET IMAGES READY ######################################
+	# images, labels = prepImages(root, IMAGE_SIZE, IMAGE_SIZE,1)
 
-	## Prep data
-	cifarData = DataSet()
-	classes = cifarData.return_classes()
-	train_data, test_data = cifarData.return_images()
+	if not(USE_EX_DATA):
+	# images = np.load('/Users/graemecox/Documents/ResearchProject/Code/Data/1000_1000/image_1000_1000.npy')
+		images = np.load('Data/images.npy')
+		labels = np.load('Data/labels.npy')
 
-	IMG_SIZE = 32
-	X_train = np.array([i[0] for i in train_data]).reshape(-1,IMG_SIZE*IMG_SIZE)
-	# X_train = np.array([i[0] for i in train_data]).reshape(-1, IMG_SIZE, IMG_SIZE,3)
-	y_train = [i[1] for i in train_data]
+		train_images, test_images, train_labels, test_labels = train_test_split(
+			images, labels, test_size=0.2, random_state=0)
 
-	# X_test = np.array([i[0] for i in test_data]).reshape(-1, IMG_SIZE, IMG_SIZE,3)
-	X_test = np.array([i[0] for i in test_data]).reshape(-1,IMG_SIZE*IMG_SIZE)
-	y_test = [i[1] for i in test_data]
+		print('Length of training images: ' + str(len(train_images)))
+		print('Length of training labels: ' + str(len(train_labels)))
 
-	# print(y_test[1:10])
-	index = 0;
+		print(train_labels.shape)
+		print(test_labels.shape)
+		print(train_images.shape)
+		print(test_images.shape)
 
-	# print(len(y_te))
+##############################################################################################
 
 	with tf.Session() as sess:
 		sess.run(init_op)
-		total_batch = int(len(train_data) / batch_size)
-		# total_batch = int(len(mnist.train.labels) / batch_size)
+
+		if (USE_EX_DATA):
+			total_batch = int(len(mnist.test.labels)/batch_size)
+		else:
+			total_batch = int(len(train_labels)/batch_size)
+
+		print('Total batch:'+ str(total_batch))
+
 		for epoch in range(epochs):
 			avg_cost = 0
-			index = 0
 			for i in range(total_batch):
-				batch_img = X_train[ index : index+batch_size]
-				batch_label = y_train[ index : index+batch_size]
-				index += batch_size
+				if USE_EX_DATA:
+					batch_x, batch_y = mnist.train.next_batch(batch_size=batch_size)
+				else:
+					batch_x, batch_y = next_batch(batch_size, train_images, train_labels)
 
-				# batch_img, batch_label = cifarData.next_batch_train(batch_size)
+				_, c = sess.run([optimiser, cross_entropy],
+					feed_dict={x:batch_x, y:batch_y})
+				avg_cost += c/total_batch
+			if (USE_EX_DATA):
+				test_acc = sess.run(accuracy,
+					feed_dict={x:mnist.test.images, y:mnist.test.labels})
+				print(mnist.test.images.shape)
 
-				# batch_x, batch_y = mnist.train.next_batch(batch_size=batch_size)
-				_, c = sess.run([optimiser, cross_entropy], feed_dict = {x: batch_img, y:batch_label})
-				avg_cost += c / total_batch
-			test_acc = sess.run(accuracy, feed_dict={x:X_test, y:y_test})
+			else:
+				test_acc = sess.run(accuracy,
+					feed_dict={x:test_images, y:test_labels})
 
-			print("Epoch:", (epoch+1), "cost =","{:.3f}".format(avg_cost), 
-				" test_accuracy: {:.3f}".format(test_acc))
-			summary = sess.run(merged, feed_dict={x:X_test, y:y_test})
-			writer.add_summary(summary,epoch)
-
+			print("epoch:", (epoch+1), "cost=","{:.3f}".format(avg_cost), 
+				"test accuracy: {:.3f}".format(test_acc))
 		print("\nTraining complete!")
-		writer.add_graph(sess.graph)
-		print(sess.run(accuracy, feed_dict={x:X_test, y:y_test}))
-
-def create_conv_layer(input_data,num_input_channels, num_filters,
-	filter_shape, pool_shape,name):
-	
-
-	conv_filt_shape = [filter_shape[0], filter_shape[1], num_input_channels, num_filters]
-
-	#initialize weights
-	weights = tf.Variable(tf.truncated_normal(conv_filt_shape, stddev=0.03), name=name+'_W')
-	bias = tf.Variable(tf.truncated_normal([num_filters]), name=name+'_b')
-
-	#setup convolutional layer operation
-	out_layer = tf.nn.conv2d(input_data, weights, [1,1,1,1], padding='SAME')
-	# out_layer = tf.nn.conv3d(input_data,weights,[1,1,1,1],padding='SAME')
-	out_layer += bias
-
-	#apply ReLU activation function
-	out_layer = tf.nn.relu(out_layer)
-
-	#max pooling
-	ksize = [1, pool_shape[0], pool_shape[1], 1]
-	strides = [1,2,2,1]
-	out_layer = tf.nn.max_pool(out_layer,ksize= ksize, strides = strides,padding='SAME')
-
-	return out_layer
 
 
-##Run code
-run_cnn()
+		if (USE_EX_DATA):
+			print(sess.run(accuracy,feed_dict={x:mnist.test.images, y:mnist.test.labels}))
+		else:
+			print(sess.run(accuracy,feed_dict={x:test_images, y:test_labels}))
+
+if __name__ == "__main__":
+	main()
