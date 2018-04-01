@@ -60,11 +60,12 @@ def prepImages(root, max_x=100, max_y=100,save=0):
 	if save:
 		# i_shuf = np.random.permutation(np.arange(len(train_images)))
 		print('----- Saved images and labels ------')
-		np.save('Data/image.npy',train_images)
-		np.save('Data/labels.npy',labels)
-		subfolder = 'Data/'+str(max_x)+'_'+str(max_y)+'/'
-
+		np.save('../Data/image.npy',train_images)
+		np.save('../Data/labels.npy',labels)
+		subfolder = '../Data/'+str(max_x)+'_'+str(max_y)+'/'
+		print(subfolder)
 		if not os.path.exists(subfolder): # If folder doesn't exist, create it
+
 			os.makedirs(subfolder)
 
 		saveInBatch(train_images, labels,subfolder)
