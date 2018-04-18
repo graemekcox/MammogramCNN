@@ -103,7 +103,6 @@ def inputs(eval_data=False):
 		data_dir = FLAGS.data_dir,
 		batch_size = FLAGS.batch_size)
 
-
 	return images, labels
 
 

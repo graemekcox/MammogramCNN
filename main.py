@@ -7,9 +7,9 @@ import time
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_dir','/tmp/mammogram_train',
+tf.app.flags.DEFINE_string('train_dir','mammogram_train',
 	"""Directory to write event logs""")
-tf.app.flags.DEFINE_integer('max_steps',1000,
+tf.app.flags.DEFINE_integer('max_steps',100,
 	"""Number of batches to run""")
 tf.app.flags.DEFINE_boolean('log_device_placement',False,
 	"""Choose whether to log device placement""")
@@ -32,6 +32,10 @@ def train():
 
 		train_op = mammogram.train(loss, global_step)
 
+		## To See all variables, including network
+		# print(tf.all_variables())
+
+
 		class _LoggerHook(tf.train.SessionRunHook):
 			def begin(self):
 				self._step = -1
@@ -42,7 +46,7 @@ def train():
 				return tf.train.SessionRunArgs(loss)
 
 			def after_run(self, run_context, run_values):
-				if step._step % FLAGS.log_frequency == 0:
+				if self._step % FLAGS.log_frequency == 0:
 					current_time = time.time()
 					duration = current_time - self._start_time
 					self._start_time = current_time

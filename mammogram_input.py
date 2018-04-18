@@ -2,7 +2,7 @@ import tensorflow as tf
 import os
 import numpy as np
 
-IMAGE_SIZE = 500 #Placeholder. Resize to 500 by 500, but should zero pad to max set size
+IMAGE_SIZE = 100 #Placeholder. Resize to 500 by 500, but should zero pad to max set size
 NUM_CLASSES = 3
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 1000
 
@@ -24,8 +24,8 @@ def read_mammograms(filename_queue,labels):
 		pass
 	result = MammogramRecord()
 
-	result.height = 500
-	result.width  = 500
+	result.height = 100
+	result.width  = 100
 	# label_bytes   = 1
 	# image_bytes = result.height*result.width #grayscale, so only 1 byte deep
 	# record_bytes = label_bytes*image_bytes
@@ -35,12 +35,10 @@ def read_mammograms(filename_queue,labels):
 	reader = tf.WholeFileReader()
 	result.key, value = reader.read(filename_queue)
 	result.image = tf.image.decode_jpeg(value)
-	print(result.key)
+
 	# print(value)
 
 	result.labels = tf.cast(labels,tf.int32)
-
-	print()
 
 	# print(result.labels)
 	# print(result.image)
@@ -91,14 +89,14 @@ def _generate_image_and_label_batch(image,label,min_queue_examples, batch_size, 
 			[image, label],
 			batch_size=batch_size,
 			num_threads=num_preprocess_threads,
-			capacity=min_queue_examples + 3*batch_size,
+			capacity=min_queue_examples + 1*batch_size,
 			min_after_dequeue = min_queue_examples)
 	else:
 		images, label_batch = tf.train.batch(
 			[image,label],
 			batch_size=batch_size,
 			num_threads=num_preprocess_threads,
-			capacity=min_queue_examples+3*batch_size)
+			capacity=min_queue_examples+1*batch_size)
 
 	tf.summary.image('images',images)
 
@@ -161,8 +159,8 @@ def inputs(eval_data, data_dir, batch_size):
 		image, label = read_from_disk(input_queue)
 
 		reshaped_image = tf.cast(image, tf.float32)
-		height = 500
-		width = 500
+		height = 100
+		width = 100
 
 		float_image = tf.image.resize_image_with_crop_or_pad(reshaped_image, height, width)
 		float_image.set_shape([height,width,1])
