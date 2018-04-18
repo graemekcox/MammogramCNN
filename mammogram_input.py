@@ -35,8 +35,16 @@ def read_mammograms(filename_queue,labels):
 	reader = tf.WholeFileReader()
 	result.key, value = reader.read(filename_queue)
 	result.image = tf.image.decode_jpeg(value)
+	print(result.key)
+	# print(value)
 
 	result.labels = tf.cast(labels,tf.int32)
+
+	print()
+
+	# print(result.labels)
+	# print(result.image)
+
 	return result
 
 	# #Convert from string to uint8 vector
@@ -77,6 +85,7 @@ def _generate_image_and_label_batch(image,label,min_queue_examples, batch_size, 
 	# temp = np.array(label)
 	# temp = temp.reshape(-1)
 
+
 	if shuffle:
 		images, label_batch = tf.train.shuffle_batch(
 			[image, label],
@@ -94,15 +103,20 @@ def _generate_image_and_label_batch(image,label,min_queue_examples, batch_size, 
 	tf.summary.image('images',images)
 
 	return images, label_batch
-	# return images, tf.reshape(label_batch, [batch_size])
-	# print(label_batch.shape)
-	# return images
+
+
+def read_from_disk(input_queue):
+	label= input_queue[1]
+	file_contents = tf.read_file(input_queue[0])
+	image = tf.image.decode_jpeg(file_contents, channels=1)
+
+	return image, label
 
 def inputs(eval_data, data_dir, batch_size):
 
 	if not eval_data:
 		print('------ Get Training Set ------')
-		filenames, labels = _getFilename(data_dir)
+		filenames, label = _getFilename(data_dir)
 		num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
 
 
@@ -112,41 +126,62 @@ def inputs(eval_data, data_dir, batch_size):
 	#Read in images now
 	with tf.name_scope('input'):
 		string_tensor = tf.convert_to_tensor(filenames, dtype=tf.string)
+		labels_tensor = tf.convert_to_tensor(label, dtype=tf.int32)
 		# tf.random_shuffle(string_tensor)
-		#Create queue
-		fq = tf.FIFOQueue(capacity=NUM_CLASSES, dtypes=tf.string)
-		#Create queue op
-		fq_op = fq.enqueue_many([string_tensor])
-		#Create QueueRunner and add to add to queue runner list
-		tf.train.add_queue_runner (tf.train.QueueRunner(fq, [fq_op]*1))
-		# print(fq.dequeue())
-		read_input = read_mammograms(fq,labels)
-		reshaped_image = tf.cast(read_input.image, tf.float32)
+		# #Create queue
 
-		#Resize Image
+		## Old method of getting queue setup
+		# fq = tf.FIFOQueue(capacity=NUM_CLASSES, dtypes=tf.string)
+		# #Create queue op
+		# fq_op = fq.enqueue_many([string_tensor])
+		# #Create QueueRunner and add to add to queue runner list
+		# tf.train.add_queue_runner (tf.train.QueueRunner(fq, [fq_op]*1))
+
+		# read_input = read_mammograms(fq,labels)
+		# reshaped_image = tf.cast(read_input.image, tf.float32)
+
+		# #Resize Image
+		# height = 500
+		# width = 500
+		# float_image = tf.image.resize_image_with_crop_or_pad(reshaped_image, height, width)
+		# float_image.set_shape([height, width, 3])
+		# # read_input.labels.set_shape([1])
+
+		# #Make sure we're shuffling properly
+		# min_fraction_of_examples_in_queue= 0.4
+		# min_queue_examples = int(num_examples_per_epoch * min_fraction_of_examples_in_queue)
+
+		# return _generate_image_and_label_batch(float_image, read_input.labels,
+		# 	min_queue_examples, batch_size, shuffle=False)
+
+		# New way to queue
+		input_queue = tf.train.slice_input_producer([string_tensor, labels_tensor],
+			num_epochs=num_examples_per_epoch,
+			shuffle=True)
+		image, label = read_from_disk(input_queue)
+
+		reshaped_image = tf.cast(image, tf.float32)
 		height = 500
 		width = 500
-		float_image = tf.image.resize_image_with_crop_or_pad(reshaped_image, height, width)
-		float_image.set_shape([height, width, 3])
-		# read_input.labels.set_shape([1])
 
-		#Make sure we're shuffling properly
-		min_fraction_of_examples_in_queue= 0.4
+		float_image = tf.image.resize_image_with_crop_or_pad(reshaped_image, height, width)
+		float_image.set_shape([height,width,1])
+
+		min_fraction_of_examples_in_queue = 0.4
 		min_queue_examples = int(num_examples_per_epoch * min_fraction_of_examples_in_queue)
 
-		return _generate_image_and_label_batch(float_image, read_input.labels,
+		return _generate_image_and_label_batch(float_image, label,
 			min_queue_examples, batch_size, shuffle=False)
-
 
 		# filename_queue= tf.train.string_input_producer(filenames)
 
 
 
 
-root= '/Volumes/ExternalDrive/Mammograms/'
-images, labels = inputs(False, root, 128)
+# root= '/Volumes/ExternalDrive/Mammograms/'
+# images, labels = inputs(False, root, 128)
 
-print(images)
-print(labels)
+# print(images)
+# print(labels)
 
 
