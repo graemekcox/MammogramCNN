@@ -1,10 +1,28 @@
 import tensorflow as tf
 import os
 import numpy as np
+from PIL import Image
 
-IMAGE_SIZE = 100 #Placeholder. Resize to 500 by 500, but should zero pad to max set size
+IMAGE_SIZE = 500 #Placeholder. Resize to 500 by 500, but should zero pad to max set size
 NUM_CLASSES = 3
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 1000
+
+def _findBiggestImages(filenames):
+
+	max_x = 0
+	max_y = 0
+
+	for file in filenames:
+		image = np.array(Image.open(file))
+
+		if image.shape[1] > max_x or image.shape[0] > max_y:
+			max_x = image.shape[1]
+			max_y = image.shape[0]
+
+	print("Max X Value: %d\nMax Y Value: %d" % (max_x, max_y))
+
+	return max_x, max_y
+
 
 def read_mammograms(filename_queue,labels):
 	"""
@@ -24,8 +42,8 @@ def read_mammograms(filename_queue,labels):
 		pass
 	result = MammogramRecord()
 
-	result.height = 100
-	result.width  = 100
+	# result.height = 100
+	# result.width  = 100
 	# label_bytes   = 1
 	# image_bytes = result.height*result.width #grayscale, so only 1 byte deep
 	# record_bytes = label_bytes*image_bytes
@@ -38,7 +56,7 @@ def read_mammograms(filename_queue,labels):
 
 	# print(value)
 
-	result.labels = tf.cast(labels,tf.int32)
+	result.labels = tf.cast( labels ,tf.int32)
 
 	# print(result.labels)
 	# print(result.image)
@@ -49,7 +67,7 @@ def read_mammograms(filename_queue,labels):
 	# record_bytes = tf.
 
 
-def _getFilename(root):
+def _getFilename(root,readArray=False):
 	"""
 	Gets all filenames of jpg images
 
@@ -58,23 +76,38 @@ def _getFilename(root):
 	"""
 	print('Getting filenames in %s' % root)
 
-	filenames = []
-	labels= []
-	classes = ['Cancer','Benign','Normal']
+	if not readArray:
+		filenames = []
+		labels= []
+		classes = ['Cancer','Benign','Normal']
 
-	for root, dirs, files in os.walk(root, topdown=False):
-		for file in files:
-			if file.endswith(".jpg"):
-				fn = os.path.join(root, file) 
-				filenames.append(fn)
+		for root, dirs, files in os.walk(root, topdown=False):
+			for file in files:
+				if file.endswith(".jpg"):
+					fn = os.path.join(root, file) 
+					filenames.append(fn)
 
-				# Add label
-				# temp_labels= [0,0,0]
-				for i in range(len(classes)):
-					if classes[i] in fn:
-						# temp_labels[i] = 1
-						# labels.append(temp_labels)
-						labels.append(i)
+					# Add label
+					# temp_labels= [0,0,0]
+					for i in range(len(classes)):
+						if classes[i] in fn:
+							# temp_labels[i] = 1
+							# labels.append(temp_labels)
+							labels.append(i+1)
+
+		filenames = np.array(filenames)
+		labels = np.array(labels)
+		np.save('/Users/graemecox/Documents/ResearchProject/Data/filenames.npy',filenames)
+		np.save('/Users/graemecox/Documents/ResearchProject/Data/labels.npy', labels)
+		print('Saved files!')
+	else:
+		filenames = np.load('/home/coxgk/Research/Data/filenames.npy')
+		labels = np.load('/home/coxgk/Research/Data/labels.npy')
+
+	# print(np.isnan(np.array(labels)).any())
+	# print(labels.count(0))
+	# print(labels.count(1))
+	# print(labels.count(2))
 
 	return filenames,labels
 
@@ -123,6 +156,9 @@ def inputs(eval_data, data_dir, batch_size):
 
 	#Read in images now
 	with tf.name_scope('input'):
+
+		max_x, max_y = _findBiggestImages(filenames)
+
 		string_tensor = tf.convert_to_tensor(filenames, dtype=tf.string)
 		labels_tensor = tf.convert_to_tensor(label, dtype=tf.int32)
 		# tf.random_shuffle(string_tensor)

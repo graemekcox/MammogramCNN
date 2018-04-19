@@ -23,8 +23,9 @@ def train():
 		# Get images and labels
 		with tf.device('/cpu:0'):
 			images,labels = mammogram.inputs(False)
-		# print(images)
-		# print(labels)
+		print(images)
+		print(labels)
+
 
 		logits = mammogram.inference(images)
 

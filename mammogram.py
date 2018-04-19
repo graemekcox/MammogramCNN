@@ -15,14 +15,12 @@ import mammogram_input
 # NUM_CLASSES = 3
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_integer('batch_size',128,"""Number of images processed in each batch""")
+tf.app.flags.DEFINE_integer('batch_size',32,"""Number of images processed in each batch""")
 tf.app.flags.DEFINE_string('data_dir','/Volumes/ExternalDrive/Mammograms/',"""Path to Mammogram Images""")
 
 IMAGE_SIZE = mammogram_input.IMAGE_SIZE
 NUM_CLASSES = mammogram_input.NUM_CLASSES
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = mammogram_input.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
-
-
 
 ## Hyperparameters
 MOVING_AVG_DECAY = 0.9999 #Decay to use for moving average
@@ -102,6 +100,8 @@ def inputs(eval_data=False):
 		eval_data=eval_data,
 		data_dir = FLAGS.data_dir,
 		batch_size = FLAGS.batch_size)
+	print(images)
+	print(labels)
 
 	return images, labels
 
@@ -254,78 +254,3 @@ def train(total_loss, global_step):
 		train_op = tf.no_op(name='train')
 
 	return train_op
-
-# train()
-# def _getFilenames(root):
-# 	print('------ Reading in images from %s ------' % root)
-
-# 	filenames=[]
-
-# 	for root, dirs, files in os.walk(root, topdown=False):
-# 		for file in files:
-# 			if file.endswith(".jpg"):
-# 				filenames.append(os.path.join(root, file))
-
-
-# 	return filenames
-
-# def inputs(eval_data, data_dir, batch_size):
-
-# 	filenames = _getFilenames(data_dir)
-
-# 	#Get filename queue
-# 	# string_tensor = tf.convert_to_tensor(filenames, dtype=tf.string)
-# 	# tf.random_shuffle(string_tensor)
-
-# 	# fq =tf.FIFOQueue(capacity=NUM_CLASSES, dtypes=tf.string)
-# 	fq = tf.train.string_input_producer(filenames)
-# 	fq_op = fq.enqueue_many([string_tensor])
-
-# 	tf.train.add_queue_runner(tf.train.QueueRunner(fq, [fq_op]*1))
-
-# 	#Set up jpeg reader
-# 	im_reader = tf.WholeFileReader()
-# 	_, im = im_reader.read(fq)
-
-
-# def main():
-# 	root = '/Volumes/ExternalDrive/Mammograms/'
-# 	filenames = _getFilenames(root)
-
-# 	#Get filename queue
-# 	string_tensor = tf.convert_to_tensor(filenames, dtype=tf.string)
-# 	tf.random_shuffle(string_tensor)
-
-# 	# fq =tf.FIFOQueue(capacity=NUM_CLASSES, dtypes=tf.string)
-
-# 	fq = tf.train.string_input_producer(filenames)
-# 	fq_op = fq.enqueue_many([string_tensor])
-
-
-# 	tf.train.add_queue_runner(tf.train.QueueRunner(fq, [fq_op]*1))
-
-# 	#Set up jpeg reader
-# 	im_reader = tf.WholeFileReader()
-# 	_, im = im_reader.read(fq)
-
-# 	#Decode as jpeg into a Tensor
-
-# 	image = tf.image.decode_jpeg(im)
-
-# 	with tf.Session() as sess:
-# 		tf.initialize_all_variables().run()
-
-# 		#Coordinate loading of image files
-# 		coord = tf.train.Coordinator()
-# 		threads = tf.train.start_queue_runners(coord=coord)
-
-# 		image_tensor = np.array(sess.run([image]))
-# 		print(image_tensor.shape)
-
-# 		#Finish filename queue coordinator
-# 		coord.request_stop()
-# 		coord.join(threads)
-
-# main()
-# root = '/Volumes/ExternalDrive/Mammograms/'
-# print(len(_getFilenames(root)))
