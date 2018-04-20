@@ -5,6 +5,7 @@ import sys
 from skimage import color
 import cv2
 
+from sklearn.model_selection import train_test_split
 # sys.path.insert(0, 'imagePrep')
 # from imageResizer import * 
 
@@ -141,6 +142,31 @@ def convertToBW(data):
 	# gray =np.array(cv2.cvtColor(data, cv2.COLOR_RGB2GRAY))
 	# gray =np.array(cv2.cvtColor(data, cv2.COLOR_RGB2GRAY))
 	return gray
+
+def prepDDSM(PREP_IMAGES, max_x=500, max_y=500):
+	if PREP_IMAGES:
+		images,labels = prepImages(DATA_DIR, max_x, max_y, 1)
+
+	images = np.load('/Users/graemecox/Documents/ResearchProject/Data/500_500/image_b1.npy')
+	labels = np.load('/Users/graemecox/Documents/ResearchProject/Data/500_500/labels_b1.npy')
+
+	class DDSM(object):
+		pass
+	output = DDSM()
+
+	output.train_images, output.test_images, output.train_labels, output.test_labels = train_test_split(
+		images, labels, test_size=0.2, random_state=0)
+
+	print('Length of training images: ' + str(len(output.train_images)))
+	print('Length of training labels: ' + str(len(output.train_labels)))
+
+	# print(output.train_labels.shape)
+	# print(output.test_labels.shape)
+	# print(output.train_images.shape)
+	# print(output.test_images.shape)
+
+	return output
+
 
 
 ### Uncomment to prep images
