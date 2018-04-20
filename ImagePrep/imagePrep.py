@@ -2,9 +2,11 @@ import numpy as np
 from PIL import Image
 import os
 import sys
+from skimage import color
+import cv2
 
-sys.path.insert(0, 'imagePrep')
-from imageResizer import * 
+# sys.path.insert(0, 'imagePrep')
+# from imageResizer import * 
 
 ## Reads in all images in root, add saves labels
 def prepImages(root, max_x=100, max_y=100,save=0):
@@ -60,7 +62,7 @@ def prepImages(root, max_x=100, max_y=100,save=0):
 	if save:
 		# i_shuf = np.random.permutation(np.arange(len(train_images)))
 		print('----- Saved images and labels ------')
-		np.save('../Data/image.npy',train_images)
+		np.save('../Data/images.npy',train_images)
 		np.save('../Data/labels.npy',labels)
 		subfolder = '../Data/'+str(max_x)+'_'+str(max_y)+'/'
 		print(subfolder)
@@ -111,22 +113,38 @@ def saveInBatch(features, labels, subfolder):
 		np.save(subfolder+'image_b'+str(i)+'.npy', features[ind])
 		np.save(subfolder+'labels_b'+str(i)+'.npy', labels[ind])
 
-# batch_1 = feat[i_shuf[0:full_len/3-1]]
-# print(batch_1)
-# batch_2 = feat[i_shuf[full_len/3 : 2*full_len/3]]
-# print(batch_2)
-# print_3 = feat[i_shuf[2*full_len/3 : 3*full_len/3]]
-
-# print(arr)
-
-# fn = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/Benign/benign_01/case0029/C_0029_1.LEFT_CC.jpg'
-root = '/Users/graemecox/Documents/ResearchProject/Data/Mammograms/'
-# root = '/Volumes/SeagateBackupPlusDrive/Mammograms/'
 
 
-# max_x, max_y = findBiggestImage(root)
-# print(findBiggestImage(root))
+def padArray(data,max_x, max_y):
 
+	x,y,depth = data.shape
+	print(x,y)
+
+	if (depth != 1):
+		print('This is not a b&w image. Converting now')
+		data = convertToBW(data)
+
+	new_im = np.zeros(shape=(max_x,max_y))
+	
+	x1 = (max_x - x)/2
+	x2 = x1+x
+	print(x1,x2)
+
+	y1 = (max_y - y)/2
+	y2 = y1+y
+
+	new_im[x1:x2, y1:y2] = data
+
+
+def convertToBW(data):
+	gray = color.rgb2gray(data)
+	# gray =np.array(cv2.cvtColor(data, cv2.COLOR_RGB2GRAY))
+	# gray =np.array(cv2.cvtColor(data, cv2.COLOR_RGB2GRAY))
+	return gray
+
+
+### Uncomment to prep images
+# root = '/Volumes/ExternalDrive/Mammograms/'
 # max_x = 500
 # max_y = 500
 
